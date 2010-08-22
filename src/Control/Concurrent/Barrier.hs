@@ -52,12 +52,12 @@ import qualified Control.Concurrent.Event as Event
 ------------------------------------------------------------------------------
 -- | Barrier data type.
 data Barrier =
-  Barrier { lock    :: Lock      -- ^ A lock to assure atomicity if needed.
-          , parties :: Int       -- ^ Number of threads needed to proceed.
-          , waiting :: IORef Int -- ^ Number of threads that currently wait
-                                 -- on this barrier.
-          , event   :: Event     -- ^ Event that is emitted when execution can
-                                 -- be proceeded.
+  Barrier { lock    :: Lock        -- ^ A lock to assure atomicity if needed.
+          , parties :: Int         -- ^ Number of threads needed to proceed.
+          , waiting :: IORef Int   -- ^ Number of threads that currently wait
+                                   -- on this barrier.
+          , event   :: IORef Event -- ^ Event that is emitted when execution can
+                                   -- be proceeded.
           }
 
 
@@ -67,7 +67,10 @@ new :: Int                      -- ^ Number of parties needed to wait on a
                                 -- barrier to proceed.
     -> IO Barrier
 new parties =
-  Barrier <$> Lock.new <*> pure parties <*> newIORef 0 <*> Event.new
+  Barrier <$> Lock.new
+          <*> pure parties
+          <*> newIORef 0
+          <*> (Event.new >>= newIORef)
 
 
 ------------------------------------------------------------------------------
@@ -77,16 +80,22 @@ new parties =
 wait :: Barrier                 -- ^ A barrier to wait on.
      -> IO ()
 wait (Barrier { .. }) = do
-  emit <- with lock $ do
-            waiting' <- readIORef waiting
+  (emit, event) <- with lock $ do
+                     waiting' <- readIORef waiting
+                     oldEvent <- readIORef event
 
-            if waiting' + 1 == parties
-              then do
-                writeIORef waiting 0
-                return True
-              else do
-                writeIORef waiting (waiting' + 1)
-                return False
+                     if waiting' + 1 == parties
+                       then do
+                         writeIORef waiting 0
+
+                         -- to avoid race condition we need to create new event
+                         newEvent <- Event.new
+                         writeIORef event newEvent
+
+                         return (True, oldEvent)
+                       else do
+                         writeIORef waiting (waiting' + 1)
+                         return (False, oldEvent)
 
   if emit
     then Event.signal event
