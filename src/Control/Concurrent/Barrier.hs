@@ -34,6 +34,7 @@ module Control.Concurrent.Barrier
 
          -- * Waiting
          , wait
+         , waitingCount
        ) where
 
 
@@ -47,6 +48,7 @@ import qualified Control.Concurrent.Lock as Lock
 
 import Control.Concurrent.Event ( Event )
 import qualified Control.Concurrent.Event as Event
+
 
 ------------------------------------------------------------------------------
 -- | Barrier data type.
@@ -99,3 +101,13 @@ wait (Barrier { .. }) = do
   if emit
     then Event.signal event
     else Event.wait event
+
+
+------------------------------------------------------------------------------
+-- | Reports the number of threads that are currently waiting on a barrier.
+waitingCount :: Barrier -> IO Int
+waitingCount (Barrier lock _ waiting _) =
+  with lock $ readIORef waiting
+
+
+------------------------------------------------------------------------------
