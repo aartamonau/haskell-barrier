@@ -1,0 +1,39 @@
+name:     barrier
+version:  0.0.0
+synopsis: Barrier synchronization objects for Haskell.
+
+description:
+  Barrier synchronization objects for Haskell.
+
+license:       LGPL
+license-file:  LICENSE
+author:        Aliaksiej Artamonaŭ
+maintainer:    Aliaksiej Artamonaŭ <aliaksiej.artamonau@gmail.com>
+build-type:    Simple
+cabal-version: >= 1.6
+homepage:      http://github.com/shaleny/haskell-barrier
+category:      Concurrency
+
+extra-source-files:
+  LICENSE
+
+
+------------------------------------------------------------------------------
+library
+  hs-source-dirs: src
+
+  exposed-modules:
+    Control.Concurrent.Barrier
+
+  build-depends:
+    base >= 4,
+    concurrent-extra >= 0.4
+
+  if impl(ghc >= 6.12.0)
+    ghc-options: -Wall -fwarn-tabs -O2
+                 -fno-warn-unused-do-bind -fno-warn-name-shadowing
+  else
+    ghc-options: -Wall -fwarn-tabs -O2 -fno-warn-name-shadowing
+
+
+------------------------------------------------------------------------------
