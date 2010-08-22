@@ -39,7 +39,6 @@ module Control.Concurrent.Barrier
 
 ------------------------------------------------------------------------------
 import Control.Applicative ( (<$>), (<*>), pure )
-import Control.Monad ( when )
 import Data.IORef ( IORef, newIORef, readIORef, writeIORef )
 
 
